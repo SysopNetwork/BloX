@@ -1,0 +1,21 @@
+# MBBS runtime files require CRLF line endings.
+# The CNF editor silently breaks on LF-only .MSG files.
+*.MSG   text eol=crlf
+*.MDF   text eol=crlf
+
+# Source and documentation
+*.c     text
+*.cpp   text
+*.h     text
+*.hpp   text
+*.MD    text
+*.md    text
+*.DEF   text
+*.vcxproj text
+*.sln   text
+
+# Binary deployables
+*.DLL   binary
+*.MCV   binary
+*.DAT   binary
+*.VIR   binary

@@ -1,0 +1,51 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+ipch/
+
+# Build output
+BUILD/out/
+Debug/
+Release/
+x64/
+Win32/
+*.obj
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.tlog
+*.log
+*.lastbuildstate
+*.iobj
+*.ipdb
+
+# Compiled message files and generated headers land in the BBS, not the repo
+*.MCV
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Internal notes and private data (never publish)
+MEMORY.MD
+PROJECT_STATUS.MD
+Notes/
+SCRATCH/
+PRIVATE/
+INTERNAL/
+CLAUDE.md
+.claude/
+
+# Environment-specific configuration
+*.INI
+!*.INI.EXAMPLE
+
+# Test BBS runtime artifacts
+TESTS/runtime/
