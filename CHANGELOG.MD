@@ -25,7 +25,8 @@ Semantic Versioning.
   monthly leaderboards, and an all-time Hall of Fame, in self-creating
   Btrieve files.
 * Sysop configuration options and a full ANSI message file.
-* Console test harnesses for the engine and renderer.
+* Console test harnesses for the engine and renderer, and a scripted
+  telnet session driver for end-to-end testing.
 
 ### Fixed
 
