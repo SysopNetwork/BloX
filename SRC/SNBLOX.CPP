@@ -583,7 +583,10 @@ init__snblox(VOID)                 /* module initialization                  */
                                          *sizeof(struct BlxSession));
     rtihdlr(bloxHeartbeat);
 
-    shocst("BloX v1.0.0 Stacked", "By SysopNetwork.com");
+    /* Two audit-trail lines at boot, matching the house style: the module
+     * banner on the first line and the attribution on the second.          */
+    shocst("BloX v1.0.0 Stacked", "");
+    shocst("By SysopNetwork.com", "");
 }
 
 }   /* extern "C" */
