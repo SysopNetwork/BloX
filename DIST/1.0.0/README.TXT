@@ -40,13 +40,14 @@ INSTALLATION
 
   1. Shut the server down.
   2. Copy the package files into your BBS directory (default C:\BBSV10).
-  3. Start the server. BloX registers itself and creates its two data
-     files automatically on first run:
+  3. In the offline Menu Tree editor, add a module page that points a
+     menu selection at the module named "BloX". The module must be on
+     the menu to be loaded.
+  4. Start the server. BloX loads, registers itself, and creates its two
+     data files automatically on first run:
          SNBLOXPL.DAT  player statistics
          SNBLOX.DAT    the all-time Hall of Fame
      No separate database preparation is required.
-  4. In the offline Menu Tree editor, add a module page that points a
-     menu selection at the module named "BloX", so players can reach it.
 
 
 CONFIGURATION
