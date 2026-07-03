@@ -1,0 +1,6 @@
+; Filename: SNBLOX_EXP.DEF
+LIBRARY SNBLOX.DLL
+; BloX - ANSI falling-block puzzle game for The Major BBS v10
+; Copyright (c) 2026 Sysop Network
+EXPORTS
+	_init__snblox=init__snblox	@1
