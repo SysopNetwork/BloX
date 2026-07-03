@@ -1,0 +1,26 @@
+BloX v1.0.0 - Release Notes
+Copyright (c) 2026 Sysop Network
+
+Thank you for installing BloX, an ANSI falling-block puzzle game for
+The Major BBS v10.
+
+This is the initial public release.
+
+What you get:
+  * Classic 10 x 20 falling-block gameplay with the seven shapes
+  * Modern 7-bag randomizer for fair piece distribution
+  * Soft drop, hard drop, next-piece preview, ghost piece, pause
+  * Level progression, combo and back-to-back bonuses
+  * Persistent player statistics and achievements
+  * An all-time Hall of Fame (Top 25, one entry per player)
+  * Smooth, low-bandwidth ANSI rendering with differential updates
+
+Getting started:
+  1. Copy the package files into your BBS directory and start the
+     server. BloX creates its data files on first run.
+  2. Add a module page for "BloX" in the offline Menu Tree editor.
+  3. Adjust options in the offline Configuration Editor if desired.
+
+See README.TXT for full installation, configuration, and play details.
+
+BloX is developed and maintained by Mark Laudenbach at Sysop Network.

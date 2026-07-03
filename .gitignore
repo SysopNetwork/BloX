@@ -53,3 +53,13 @@ TESTS/*.EXE
 TOOLS/*.EXE
 TESTS/*.obj
 TOOLS/*.obj
+
+# DIST release packages are publishable deployables -- track them even
+# though the blanket *.dll / *.MCV rules above would otherwise skip them.
+!DIST/**/
+!DIST/**/*.DLL
+!DIST/**/*.MCV
+# ...but not the generated distributable archives
+DIST/*.ZIP
+DIST/*.zip
+DIST/*.prev
