@@ -14,7 +14,7 @@
 #include "dfaapi.h"
 #include "BLXDATA.H"
 
-static DFAFILE *plyrbb=NULL;       /* BLXPLYR.DAT                           */
+static DFAFILE *plyrbb=NULL;       /* SNBLOXPL.DAT (player statistics)      */
 static DFAFILE *hallbb=NULL;       /* SNBLOX.DAT (all-time Hall of Fame)    */
 
 /* The Hall of Fame record's key field is a fixed 8 bytes, so lookups must
@@ -60,14 +60,14 @@ blxDataInit(void)
 
     /* the Hall of Fame record is over a kilobyte, so its file needs the   */
     /* larger Btrieve page size                                            */
-    createIfMissing("BLXPLYR.DAT", sizeof(struct BlxPlayer), 1024,
+    createIfMissing("SNBLOXPL.DAT", sizeof(struct BlxPlayer), 1024,
                     offsetof(struct BlxPlayer, userid), UIDSIZ,
                     DFAST_STRING, DFAKF_MODIFYABLE);
     createIfMissing("SNBLOX.DAT", sizeof(struct BlxHall), 2048,
                     offsetof(struct BlxHall, hallkey), 8,
                     DFAST_STRING, DFAKF_MODIFYABLE);
 
-    plyrbb=dfaOpen("BLXPLYR.DAT", sizeof(struct BlxPlayer), NULL);
+    plyrbb=dfaOpen("SNBLOXPL.DAT", sizeof(struct BlxPlayer), NULL);
     hallbb=dfaOpen("SNBLOX.DAT", sizeof(struct BlxHall), NULL);
 
     /* The Hall of Fame file holds exactly one record.  Insert it only when

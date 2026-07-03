@@ -7,7 +7,7 @@
  *                                                                           *
  *   Two data files, both created automatically on first startup:           *
  *                                                                           *
- *     BLXPLYR.DAT   one record per player, keyed by User-ID                *
+ *     SNBLOXPL.DAT  one record per player, keyed by User-ID                *
  *     SNBLOX.DAT    a single record holding the all-time Hall of Fame      *
  *                   (Top 25, one entry per player)                         *
  *****************************************************************************/
@@ -40,7 +40,7 @@
 #define BLXA_COUNT   13            /* number of achievements defined        */
 
 /*--------------------------------------------------------------------------
- * One player's lifetime record (BLXPLYR.DAT).
+ * One player's lifetime record (SNBLOXPL.DAT).
  *--------------------------------------------------------------------------*/
 struct BlxPlayer {
     CHAR userid[UIDSIZ];           /* key 0: the player                     */

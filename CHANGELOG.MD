@@ -5,7 +5,11 @@ All notable changes to BloX are documented in this file.
 The format follows Keep a Changelog conventions and the project follows
 Semantic Versioning.
 
-## [Unreleased]
+## [1.0.0] - 2026-07-02
+
+Initial release. Built, deployed, and verified on a live Major BBS v10
+test system; gameplay and score persistence confirmed over telnet. A BBS
+deployment package is provided in DIST/1.0.0.
 
 ### Changed
 
@@ -14,8 +18,10 @@ Semantic Versioning.
   have been removed; the menu now offers just Play, Instructions,
   Statistics, and Hall of Fame. The module now uses two Btrieve files
   (player statistics and the Hall of Fame) instead of three.
-* Renamed the Hall of Fame data file to SNBLOX.DAT.
-* Boot audit line now reads "BloX v1.0.0 Stacked" / "By SysopNetwork.com".
+* Named the data files for a consistent SNBLOX prefix: the Hall of Fame
+  is SNBLOX.DAT and player statistics are SNBLOXPL.DAT.
+* Boot audit prints two lines: "BloX v1.0.0 Stacked" then
+  "By SysopNetwork.com".
 
 ### Added
 
@@ -40,12 +46,11 @@ Semantic Versioning.
 
 ### Fixed
 
-* BLXHALL.DAT is created with a 2048-byte Btrieve page so the Hall of
-  Fame record fits (previously caused a create-error crash at startup).
-* The single Hall of Fame record is fetched by stepping to the first
-  record rather than by key equality, fixing a duplicate-key crash on
-  the second and later server starts.
-* All-time Hall of Fame scores now persist. The record was read with a
-  physical step before being updated, but Btrieve requires an update to
-  immediately follow a get (acquire); the write was silently discarded.
-  The Hall record and score-log deletions now acquire before writing.
+Issues found and resolved during bring-up on the test system:
+
+* The Hall of Fame file is created with a 2048-byte Btrieve page so its
+  record fits (a smaller page caused a create-error crash at startup).
+* The Hall of Fame record is fetched with an acquire (a Btrieve "get"),
+  not a physical step. Btrieve requires updates and deletes to
+  immediately follow a get; reading by step left scores silently
+  unsaved and, earlier, caused a duplicate-key crash on restart.
