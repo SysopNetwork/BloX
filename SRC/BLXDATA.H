@@ -3,20 +3,13 @@
  *                                                                           *
  *   Copyright (c) 2026 Sysop Network.  All Rights Reserved.                 *
  *                                                                           *
- *   Persistence layer: player statistics, the score log used for the       *
- *   daily / weekly / monthly leaderboards, and the all-time Hall of        *
- *   Fame.                                                                  *
+ *   Persistence layer: player statistics and the all-time Hall of Fame.   *
  *                                                                           *
- *   Three data files, all created automatically on first startup:          *
+ *   Two data files, both created automatically on first startup:           *
  *                                                                           *
  *     BLXPLYR.DAT   one record per player, keyed by User-ID                *
- *     BLXSCOR.DAT   one record per qualifying finished game, keyed by      *
- *                   completion time (duplicates allowed); pruned nightly   *
- *     BLXHALL.DAT   a single record holding the all-time Top 25            *
- *                                                                           *
- *   The Hall of Fame lives in its own record rather than being computed    *
- *   from the score log, so nightly pruning of old games can never erase    *
- *   an all-time record.                                                    *
+ *     SNBLOX.DAT    a single record holding the all-time Hall of Fame      *
+ *                   (Top 25, one entry per player)                         *
  *****************************************************************************/
 
 #ifndef BLXDATA_H
@@ -26,13 +19,7 @@
 #include "majorbbs.h"
 
 #define BLX_MODNAME  "BloX"        /* fixed name stamped into records       */
-#define BLX_TOPN     25            /* leaderboards show this many places    */
-
-/* Leaderboard periods for blxTopScores().                                  */
-#define BLXP_TODAY   0
-#define BLXP_WEEK    1
-#define BLXP_MONTH   2
-#define BLXP_ALLTIME 3
+#define BLX_TOPN     25            /* Hall of Fame shows this many places   */
 
 /*--------------------------------------------------------------------------
  * Achievements, stored as a bitmask in the player record.
@@ -73,21 +60,7 @@ struct BlxPlayer {
 };
 
 /*--------------------------------------------------------------------------
- * One finished game in the score log (BLXSCOR.DAT).  The timestamp comes
- * first so the whole record can be range-scanned by date.
- *--------------------------------------------------------------------------*/
-struct BlxScoreRec {
-    LONG when;                     /* key 0 (duplicates): time() at finish  */
-    CHAR userid[UIDSIZ];
-    LONG score;
-    LONG seconds;                  /* survival time                         */
-    SHORT level;
-    SHORT lines;
-    CHAR spare[14];
-};
-
-/*--------------------------------------------------------------------------
- * The all-time Hall of Fame (BLXHALL.DAT): a single record.  One entry
+ * The all-time Hall of Fame (SNBLOX.DAT): a single record.  One entry
  * per player -- a player improves an existing entry rather than filling
  * several places.
  *--------------------------------------------------------------------------*/
@@ -105,7 +78,7 @@ struct BlxHall {
     CHAR spare[62];
 };
 
-/* A leaderboard row handed back to the display code.                       */
+/* A Hall of Fame row handed back to the display code.                      */
 struct BlxTopRow {
     CHAR userid[UIDSIZ];
     LONG score;
@@ -133,21 +106,16 @@ void  blxDataShutdown(void);       /* close all files                       */
 GBOOL blxLoadPlayer(const CHAR *uid, struct BlxPlayer *out);
 
 /* Record one finished game: updates the player's lifetime statistics,
- * appends to the score log (when the score qualifies), maintains the
- * Hall of Fame, evaluates achievements, and applies the daily bonus.
- * gameEvents is the engine's BLXEV_* accumulation for the whole game
- * plus anything the caller tracked (combo/perfect flags).                 */
+ * maintains the Hall of Fame, evaluates achievements, and applies the
+ * daily first-game bonus.                                                 */
 void  blxRecordGame(const CHAR *uid, long score, int level, int lines,
                     long seconds, long blocks, int sawTetris, int sawPerfect,
                     int bestCombo, long minScore, long dailyBonus,
                     struct BlxPlayer *statsOut,
                     struct BlxGameOutcome *outcome);
 
-/* Fill rows[] with the Top 25 for a period; returns the row count.        */
-int   blxTopScores(int period, struct BlxTopRow rows[], int max);
-
-/* Remove score-log records older than keepDays.  Run at midnight.         */
-void  blxPruneScores(int keepDays);
+/* Fill rows[] with the Hall of Fame Top 25; returns the row count.        */
+int   blxHallTop(struct BlxTopRow rows[], int max);
 
 /* Remove every trace of a deleted user account.                           */
 void  blxDeletePlayer(const CHAR *uid);

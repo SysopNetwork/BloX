@@ -31,15 +31,11 @@ SOUNDS {Send sound effects (terminal bells)? YES} B
 
 DLYBONUS {Daily first-game bonus points? 0} N 0 100000
 
- Games scoring below this many points stay off the leaderboards
- (lifetime statistics still count). Keeps the boards meaningful.
+ Games scoring below this many points stay out of the Hall of
+ Fame (lifetime statistics still count). Keeps the board
+ meaningful.
 
-MINSCORE {Minimum score for the leaderboards? 500} N 0 1000000
-
- How many days of games the daily/weekly/monthly leaderboards
- keep. The all-time Hall of Fame is never pruned.
-
-KEEPDAYS {Days of scores to keep? 62} N 31 365
+MINSCORE {Minimum score for the Hall of Fame? 500} N 0 1000000
 
 LEVEL6 {BloX: module text}
 
@@ -51,18 +47,14 @@ MENU {[2J[H
      [1;33mP[0;37m ... Play BloX[0m
      [1;33mI[0;37m ... Instructions[0m
      [1;33mS[0;37m ... Your Statistics[0m
-
-     [1;33mT[0;37m ... Today's Top 25[0m
-     [1;33mW[0;37m ... This Week's Top 25[0m
-     [1;33mM[0;37m ... This Month's Top 25[0m
-     [1;33mA[0;37m ... All-Time Hall of Fame[0m
+     [1;33mH[0;37m ... Hall of Fame[0m
 
      [1;33mX[0;37m ... Exit[0m
 
    [1;37mChoose: [0m} T Main menu
 
 SHORTMNU {
-   [0;37mChoose ([1;33mP I S T W M A X[0;37m, or [1;33m?[0;37m for the menu): [0m} T Short menu prompt
+   [0;37mChoose ([1;33mP I S H X[0;37m, or [1;33m?[0;37m for the menu): [0m} T Short menu prompt
 
 NOANSI {
    [0;37mBloX needs ANSI graphics, and your terminal has ANSI turned
@@ -98,39 +90,21 @@ BYE {
 PRESSENT {
    [0;37mPress [1;37mENTER[0;37m to continue: [0m} T Press-ENTER prompt
 
-HSHDRD {[2J[H
-   [1;37mTODAY'S TOP 25[0m
+HALLHDR {[2J[H
+   [1;37mB L O X   -   H A L L   O F   F A M E[0m
 
    [0;36m  #. Player                         Score  Level  Lines  Date[0m
-} T Daily board header
-
-HSHDRW {[2J[H
-   [1;37mTHIS WEEK'S TOP 25[0m
-
-   [0;36m  #. Player                         Score  Level  Lines  Date[0m
-} T Weekly board header
-
-HSHDRM {[2J[H
-   [1;37mTHIS MONTH'S TOP 25[0m
-
-   [0;36m  #. Player                         Score  Level  Lines  Date[0m
-} T Monthly board header
-
-HSHDRA {[2J[H
-   [1;37mALL-TIME HALL OF FAME[0m
-
-   [0;36m  #. Player                         Score  Level  Lines  Date[0m
-} T All-time board header
+} T Hall of Fame header
 
 HSROW {[0;37m %3d. %-25s %10s   %4d  %5d  %s[0m
-} T One leaderboard row
+} T One Hall of Fame row
 
 HSEMPTY {
-   [0;37mNo games on this board yet. Be the first![0m
-} T Empty leaderboard
+   [0;37mNo games on the board yet. Be the first![0m
+} T Empty Hall of Fame
 
 HSFOOT {
-} T Leaderboard footer
+} T Hall of Fame footer
 
 STATSSCR {[2J[H
    [1;37mPLAYER STATISTICS for %s[0m
@@ -162,7 +136,7 @@ NEWBEST {
 } T New personal record
 
 HALLRANK {
-   [1;36m*** You take place #%d in the all-time Hall of Fame! ***[0m
+   [1;36m*** You take place #%d in the Hall of Fame! ***[0m
 } T Entered the Hall of Fame
 
 ACHVMSG {   [1;32m+ Achievement: %s[0m

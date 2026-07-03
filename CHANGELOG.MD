@@ -7,6 +7,16 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+### Changed
+
+* Simplified the high-score system to a single all-time Hall of Fame.
+  The daily, weekly, and monthly boards and their backing score-log file
+  have been removed; the menu now offers just Play, Instructions,
+  Statistics, and Hall of Fame. The module now uses two Btrieve files
+  (player statistics and the Hall of Fame) instead of three.
+* Renamed the Hall of Fame data file to SNBLOX.DAT.
+* Boot audit line now reads "BloX v1.0.0 Stacked" / "By SysopNetwork.com".
+
 ### Added
 
 * Initial project structure and build environment.

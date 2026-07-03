@@ -15,8 +15,7 @@
 #include "BLXDATA.H"
 
 static DFAFILE *plyrbb=NULL;       /* BLXPLYR.DAT                           */
-static DFAFILE *scorbb=NULL;       /* BLXSCOR.DAT                           */
-static DFAFILE *hallbb=NULL;       /* BLXHALL.DAT                           */
+static DFAFILE *hallbb=NULL;       /* SNBLOX.DAT (all-time Hall of Fame)    */
 
 /* The Hall of Fame record's key field is a fixed 8 bytes, so lookups must
  * use a fully zero-padded buffer -- a bare string literal would leave
@@ -64,16 +63,12 @@ blxDataInit(void)
     createIfMissing("BLXPLYR.DAT", sizeof(struct BlxPlayer), 1024,
                     offsetof(struct BlxPlayer, userid), UIDSIZ,
                     DFAST_STRING, DFAKF_MODIFYABLE);
-    createIfMissing("BLXSCOR.DAT", sizeof(struct BlxScoreRec), 1024,
-                    offsetof(struct BlxScoreRec, when), sizeof(LONG),
-                    DFAST_INTEGER, DFAKF_DUPLICATE);
-    createIfMissing("BLXHALL.DAT", sizeof(struct BlxHall), 2048,
+    createIfMissing("SNBLOX.DAT", sizeof(struct BlxHall), 2048,
                     offsetof(struct BlxHall, hallkey), 8,
                     DFAST_STRING, DFAKF_MODIFYABLE);
 
     plyrbb=dfaOpen("BLXPLYR.DAT", sizeof(struct BlxPlayer), NULL);
-    scorbb=dfaOpen("BLXSCOR.DAT", sizeof(struct BlxScoreRec), NULL);
-    hallbb=dfaOpen("BLXHALL.DAT", sizeof(struct BlxHall), NULL);
+    hallbb=dfaOpen("SNBLOX.DAT", sizeof(struct BlxHall), NULL);
 
     /* The Hall of Fame file holds exactly one record.  Insert it only when
      * the file is empty.  hallFetch (acquire-lowest) also establishes the
@@ -109,10 +104,6 @@ blxDataShutdown(void)
     if (plyrbb != NULL) {
         dfaClose(plyrbb);
         plyrbb=NULL;
-    }
-    if (scorbb != NULL) {
-        dfaClose(scorbb);
-        scorbb=NULL;
     }
     if (hallbb != NULL) {
         dfaClose(hallbb);
@@ -291,7 +282,6 @@ blxRecordGame(const CHAR *uid, long score, int level, int lines,
               struct BlxPlayer *statsOut, struct BlxGameOutcome *outcome)
 {
     struct BlxPlayer p;
-    struct BlxScoreRec rec;
     time_t now=time(NULL);
     long today=dayStamp(now);
     long lastDay;
@@ -343,20 +333,6 @@ blxRecordGame(const CHAR *uid, long score, int level, int lines,
         *statsOut=p;
     }
 
-    /* ----- score log (feeds the daily/weekly/monthly boards) ------------- */
-    if (score >= minScore) {
-        memset(&rec, 0, sizeof(rec));
-        rec.when=(LONG)now;
-        stzcpy(rec.userid, uid, UIDSIZ);
-        rec.score=score;
-        rec.seconds=seconds;
-        rec.level=(SHORT)level;
-        rec.lines=(SHORT)lines;
-        dfaSetBlk(scorbb);
-        dfaInsert(&rec);
-        dfaRstBlk();
-    }
-
     /* ----- all-time Hall of Fame ----------------------------------------- */
     if (score >= minScore) {
         outcome->hallRank=hallSubmit(uid, score, level, lines, (long)now);
@@ -364,164 +340,46 @@ blxRecordGame(const CHAR *uid, long score, int level, int lines,
 }
 
 /*--------------------------------------------------------------------------
- * Leaderboards.
- *
- * The daily, weekly, and monthly boards scan the score log from a cutoff
- * time forward, keeping each player's single best game, and hand back the
- * Top 25.  The all-time board reads the Hall of Fame record directly.
+ * The Hall of Fame board: read the single record's entries into rows[].
  *--------------------------------------------------------------------------*/
-static time_t
-periodCutoff(int period)
-{
-    time_t now=time(NULL);
-    struct tm *lt=localtime(&now);
-    time_t midnight;
-
-    if (lt == NULL) {
-        return(now-86400L);
-    }
-    lt->tm_hour=0;
-    lt->tm_min=0;
-    lt->tm_sec=0;
-    midnight=mktime(lt);
-    switch (period) {
-    case BLXP_TODAY:
-        return(midnight);
-    case BLXP_WEEK:
-        return(midnight-(time_t)6*86400L);
-    default:                       /* BLXP_MONTH                            */
-        return(midnight-(time_t)29*86400L);
-    }
-}
-
 int
-blxTopScores(int period, struct BlxTopRow rows[], int max)
+blxHallTop(struct BlxTopRow rows[], int max)
 {
-    struct BlxScoreRec rec;
     struct BlxHall hall;
-    LONG cutoff;
-    GBOOL more;
-    int n=0;
-    int i, j, slot;
+    int n=0, i;
 
     if (max > BLX_TOPN) {
         max=BLX_TOPN;
     }
-
-    if (period == BLXP_ALLTIME) {
-        dfaSetBlk(hallbb);
-        if (hallFetch(&hall)) {
-            for (i=0 ; i < max && hall.ent[i].userid[0] != '\0' ; i++) {
-                stzcpy(rows[i].userid, hall.ent[i].userid, UIDSIZ);
-                rows[i].score=hall.ent[i].score;
-                rows[i].when=hall.ent[i].when;
-                rows[i].level=hall.ent[i].level;
-                rows[i].lines=hall.ent[i].lines;
-                n++;
-            }
+    dfaSetBlk(hallbb);
+    if (hallFetch(&hall)) {
+        for (i=0 ; i < max && hall.ent[i].userid[0] != '\0' ; i++) {
+            stzcpy(rows[i].userid, hall.ent[i].userid, UIDSIZ);
+            rows[i].score=hall.ent[i].score;
+            rows[i].when=hall.ent[i].when;
+            rows[i].level=hall.ent[i].level;
+            rows[i].lines=hall.ent[i].lines;
+            n++;
         }
-        dfaRstBlk();
-        return(n);
-    }
-
-    cutoff=(LONG)periodCutoff(period);
-    dfaSetBlk(scorbb);
-    more=dfaAcqGE(&rec, &cutoff, 0);
-    while (more) {
-        /* is this player already on the board?                            */
-        slot=-1;
-        for (i=0 ; i < n ; i++) {
-            if (sameas(rows[i].userid, rec.userid)) {
-                slot=i;
-                break;
-            }
-        }
-        if (slot >= 0) {
-            if (rec.score > rows[slot].score) {
-                /* replace their weaker game                               */
-                for (i=slot ; i < n-1 ; i++) {
-                    rows[i]=rows[i+1];
-                }
-                n--;
-                slot=-1;
-            }
-        }
-        if (slot < 0) {
-            /* insert in descending score order                            */
-            for (i=0 ; i < n && rows[i].score >= rec.score ; i++) {
-            }
-            if (i < max) {
-                for (j=(n < max ? n : max-1) ; j > i ; j--) {
-                    rows[j]=rows[j-1];
-                }
-                stzcpy(rows[i].userid, rec.userid, UIDSIZ);
-                rows[i].score=rec.score;
-                rows[i].when=rec.when;
-                rows[i].level=rec.level;
-                rows[i].lines=rec.lines;
-                if (n < max) {
-                    n++;
-                }
-            }
-        }
-        more=dfaAcqNX(&rec);
     }
     dfaRstBlk();
     return(n);
 }
 
 /*--------------------------------------------------------------------------
- * Nightly maintenance: drop score-log records older than the retention
- * window.  The Hall of Fame is untouched by design.
- *--------------------------------------------------------------------------*/
-void
-blxPruneScores(int keepDays)
-{
-    struct BlxScoreRec rec;
-    LONG cutoff=(LONG)(time(NULL)-(time_t)keepDays*86400L);
-    int guard=100000;              /* safety valve against a runaway loop   */
-
-    dfaSetBlk(scorbb);
-    while (guard-- > 0 && dfaAcqLO(&rec, 0) && rec.when < cutoff) {
-        dfaDelete();
-    }
-    dfaRstBlk();
-}
-
-/*--------------------------------------------------------------------------
- * Account deletion: remove the player record, their score-log entries,
- * and any Hall of Fame places.
+ * Account deletion: remove the player record and any Hall of Fame place.
  *--------------------------------------------------------------------------*/
 void
 blxDeletePlayer(const CHAR *uid)
 {
     struct BlxPlayer p;
-    struct BlxScoreRec rec;
     struct BlxHall hall;
     CHAR key[UIDSIZ];
-    GBOOL more;
     int i, j, changed;
 
     padUid(key, uid);
     dfaSetBlk(plyrbb);
     if (dfaAcqEQ(&p, key, 0)) {
-        dfaDelete();
-    }
-    dfaRstBlk();
-
-    /* Walk the score log with ACQUIRE (a get), so a matching record can be
-     * deleted straight away -- delbtv() must follow a get, not a step.  A
-     * delete invalidates the position, so restart from the lowest record
-     * after each hit.                                                      */
-    dfaSetBlk(scorbb);
-    for (;;) {
-        more=dfaAcqLO(&rec, 0) != 0;
-        while (more && !sameas(rec.userid, (CHAR*)uid)) {
-            more=dfaAcqNX(&rec) != 0;
-        }
-        if (!more) {
-            break;
-        }
         dfaDelete();
     }
     dfaRstBlk();

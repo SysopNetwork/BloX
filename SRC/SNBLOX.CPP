@@ -48,7 +48,6 @@ static GBOOL blox_sttrou(VOID);    /* line input (menus)                     */
 static VOID  blox_stsrou(VOID);    /* status input (game keys + heartbeat)   */
 static SHORT blox_lofrou(VOID);    /* logoff: abandon any game in progress   */
 static VOID  blox_huprou(VOID);    /* hangup: same, but with no output       */
-static VOID  blox_mcurou(VOID);    /* midnight: prune the score log          */
 static VOID  blox_dlarou(CHAR *uid); /* account deleted: purge our records   */
 static VOID  blox_finrou(VOID);    /* system shutdown: close files           */
 
@@ -62,7 +61,7 @@ static struct module modblk={      /* module interface block                 */
     NULL,                          /* injoth() reprompter (default is fine)  */
     blox_lofrou,                   /* logoff supplement                      */
     blox_huprou,                   /* hangup routine                         */
-    blox_mcurou,                   /* midnight cleanup                       */
+    NULL,                          /* midnight cleanup (nothing to prune)    */
     blox_dlarou,                   /* delete-account routine                 */
     blox_finrou                    /* shutdown routine                       */
 };
@@ -74,7 +73,6 @@ static int  cfgStartLevel;
 static int  cfgHardDrop;
 static long cfgDailyBonus;
 static long cfgMinScore;
-static int  cfgKeepDays;
 static BlxUiOpts cfgUi;
 
 /* Private status code carried by our heartbeat (the 200..249 range is
@@ -489,17 +487,16 @@ gameTick(VOID)
 /* ------------------------------------------------------------------------ */
 
 static void
-showTopScores(int period)
+showHallOfFame(VOID)
 {
-    static const int hdr[4]={ HSHDRD, HSHDRW, HSHDRM, HSHDRA };
     struct BlxTopRow rows[BLX_TOPN];
     char scorestr[16], datestr[12];
     struct tm *lt;
     time_t t;
     int i, n;
 
-    n=blxTopScores(period, rows, BLX_TOPN);
-    prfmsg(hdr[period]);
+    n=blxHallTop(rows, BLX_TOPN);
+    prfmsg(HALLHDR);
     if (n == 0) {
         prfmsg(HSEMPTY);
     }
@@ -578,7 +575,6 @@ init__snblox(VOID)                 /* module initialization                  */
     cfgUi.sounds=ynopt(SOUNDS);
     cfgDailyBonus=lngopt(DLYBONUS, 0L, 100000L);
     cfgMinScore=lngopt(MINSCORE, 0L, 1000000L);
-    cfgKeepDays=(int)numopt(KEEPDAYS, 31, 365);
 
     blxDataInit();
 
@@ -587,7 +583,7 @@ init__snblox(VOID)                 /* module initialization                  */
                                          *sizeof(struct BlxSession));
     rtihdlr(bloxHeartbeat);
 
-    shocst("BloX", "BloX v1.0.0 loaded (%d channels)", numSessions);
+    shocst("BloX v1.0.0 Stacked", "By SysopNetwork.com");
 }
 
 }   /* extern "C" */
@@ -635,20 +631,9 @@ blox_sttrou(VOID)                  /* line input while at the menus          */
             showStats();
             prfmsg(SHORTMNU);
         }
-        else if (sameas(margv[0], "t")) {
-            showTopScores(BLXP_TODAY);
-            prfmsg(SHORTMNU);
-        }
-        else if (sameas(margv[0], "w")) {
-            showTopScores(BLXP_WEEK);
-            prfmsg(SHORTMNU);
-        }
-        else if (sameas(margv[0], "m")) {
-            showTopScores(BLXP_MONTH);
-            prfmsg(SHORTMNU);
-        }
-        else if (sameas(margv[0], "a") || sameas(margv[0], "f")) {
-            showTopScores(BLXP_ALLTIME);
+        else if (sameas(margv[0], "h") || sameas(margv[0], "a")
+              || sameas(margv[0], "f")) {
+            showHallOfFame();
             prfmsg(SHORTMNU);
         }
         else {
@@ -722,12 +707,6 @@ blox_huprou(VOID)                  /* carrier lost                           */
         s->active=0;
         endGame(1);                /* record it; never write to the channel  */
     }
-}
-
-static VOID
-blox_mcurou(VOID)                  /* midnight auto-cleanup                  */
-{
-    blxPruneScores(cfgKeepDays);
 }
 
 static VOID
