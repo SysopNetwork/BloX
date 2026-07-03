@@ -49,3 +49,7 @@ CLAUDE.md
 
 # Test BBS runtime artifacts
 TESTS/runtime/
+TESTS/*.EXE
+TOOLS/*.EXE
+TESTS/*.obj
+TOOLS/*.obj
