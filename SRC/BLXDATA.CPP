@@ -18,7 +18,10 @@ static DFAFILE *plyrbb=NULL;       /* BLXPLYR.DAT                           */
 static DFAFILE *scorbb=NULL;       /* BLXSCOR.DAT                           */
 static DFAFILE *hallbb=NULL;       /* BLXHALL.DAT                           */
 
-#define HALLKEY "HALL"
+/* The Hall of Fame record's key field is a fixed 8 bytes, so lookups must
+ * use a fully zero-padded buffer -- a bare string literal would leave
+ * trailing garbage in the key comparison.                                  */
+static const CHAR hallkey[8]={ 'H', 'A', 'L', 'L', 0, 0, 0, 0 };
 
 /*--------------------------------------------------------------------------
  * File creation.  Each file is created on first startup with the same key
@@ -70,14 +73,28 @@ blxDataInit(void)
     scorbb=dfaOpen("BLXSCOR.DAT", sizeof(struct BlxScoreRec), NULL);
     hallbb=dfaOpen("BLXHALL.DAT", sizeof(struct BlxHall), NULL);
 
-    /* make sure the single Hall of Fame record exists                      */
+    /* The Hall of Fame file holds exactly one record.  Insert it only when
+     * the file is empty -- checked by stepping to the first record rather
+     * than by key-equal lookup, which sidesteps any key-comparison
+     * subtlety for this singleton.                                         */
     dfaSetBlk(hallbb);
-    if (!dfaAcqEQ(&hall, (VOID*)HALLKEY, 0)) {
+    if (!dfaStepLO(&hall)) {
         memset(&hall, 0, sizeof(hall));
-        stzcpy(hall.hallkey, HALLKEY, sizeof(hall.hallkey));
+        memcpy(hall.hallkey, hallkey, sizeof(hall.hallkey));
         dfaInsert(&hall);
     }
     dfaRstBlk();
+}
+
+/*--------------------------------------------------------------------------
+ * Fetch the one Hall of Fame record.  Stepping to the lowest record always
+ * finds it (there is only ever one), which avoids depending on key-equal
+ * matching of the fixed "HALL" key.  Returns TRUE on success.
+ *--------------------------------------------------------------------------*/
+static GBOOL
+hallFetch(struct BlxHall *hall)
+{
+    return(dfaStepLO(hall) != 0);
 }
 
 void
@@ -180,7 +197,7 @@ hallSubmit(const CHAR *uid, long score, int level, int lines, long when)
     int i, slot, rank;
 
     dfaSetBlk(hallbb);
-    if (!dfaAcqEQ(&hall, (VOID*)HALLKEY, 0)) {
+    if (!hallFetch(&hall)) {
         dfaRstBlk();               /* cannot happen: created at startup     */
         return(0);
     }
@@ -387,7 +404,7 @@ blxTopScores(int period, struct BlxTopRow rows[], int max)
 
     if (period == BLXP_ALLTIME) {
         dfaSetBlk(hallbb);
-        if (dfaAcqEQ(&hall, (VOID*)HALLKEY, 0)) {
+        if (hallFetch(&hall)) {
             for (i=0 ; i < max && hall.ent[i].userid[0] != '\0' ; i++) {
                 stzcpy(rows[i].userid, hall.ent[i].userid, UIDSIZ);
                 rows[i].score=hall.ent[i].score;
@@ -501,7 +518,7 @@ blxDeletePlayer(const CHAR *uid)
     dfaRstBlk();
 
     dfaSetBlk(hallbb);
-    if (dfaAcqEQ(&hall, (VOID*)HALLKEY, 0)) {
+    if (hallFetch(&hall)) {
         changed=0;
         for (i=0 ; i < BLX_TOPN ; i++) {
             if (hall.ent[i].userid[0] != '\0'
