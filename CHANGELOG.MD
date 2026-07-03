@@ -35,3 +35,7 @@ Semantic Versioning.
 * The single Hall of Fame record is fetched by stepping to the first
   record rather than by key equality, fixing a duplicate-key crash on
   the second and later server starts.
+* All-time Hall of Fame scores now persist. The record was read with a
+  physical step before being updated, but Btrieve requires an update to
+  immediately follow a get (acquire); the write was silently discarded.
+  The Hall record and score-log deletions now acquire before writing.

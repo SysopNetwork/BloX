@@ -23,6 +23,8 @@ static DFAFILE *hallbb=NULL;       /* BLXHALL.DAT                           */
  * trailing garbage in the key comparison.                                  */
 static const CHAR hallkey[8]={ 'H', 'A', 'L', 'L', 0, 0, 0, 0 };
 
+static GBOOL hallFetch(struct BlxHall *hall);   /* defined below            */
+
 /*--------------------------------------------------------------------------
  * File creation.  Each file is created on first startup with the same key
  * layout the code expects, so a fresh installation needs no separate
@@ -74,11 +76,10 @@ blxDataInit(void)
     hallbb=dfaOpen("BLXHALL.DAT", sizeof(struct BlxHall), NULL);
 
     /* The Hall of Fame file holds exactly one record.  Insert it only when
-     * the file is empty -- checked by stepping to the first record rather
-     * than by key-equal lookup, which sidesteps any key-comparison
-     * subtlety for this singleton.                                         */
+     * the file is empty.  hallFetch (acquire-lowest) also establishes the
+     * currency a later update needs.                                       */
     dfaSetBlk(hallbb);
-    if (!dfaStepLO(&hall)) {
+    if (!hallFetch(&hall)) {
         memset(&hall, 0, sizeof(hall));
         memcpy(hall.hallkey, hallkey, sizeof(hall.hallkey));
         dfaInsert(&hall);
@@ -87,14 +88,19 @@ blxDataInit(void)
 }
 
 /*--------------------------------------------------------------------------
- * Fetch the one Hall of Fame record.  Stepping to the lowest record always
- * finds it (there is only ever one), which avoids depending on key-equal
- * matching of the fixed "HALL" key.  Returns TRUE on success.
+ * Fetch the one Hall of Fame record.
+ *
+ * Uses ACQUIRE-lowest, not step-lowest.  Btrieve requires that updbtv()
+ * and delbtv() immediately follow a "get" (acquire) of the record;
+ * a physical step does not establish the currency an update needs, so an
+ * update after a step is silently discarded.  Acquire-lowest gets the one
+ * record (whatever its key) as a proper get, so a following dfaUpdate
+ * actually persists.  The caller must have dfaSetBlk(hallbb) in effect.
  *--------------------------------------------------------------------------*/
 static GBOOL
 hallFetch(struct BlxHall *hall)
 {
-    return(dfaStepLO(hall) != 0);
+    return(dfaAcqLO(hall, 0) != 0);
 }
 
 void
@@ -503,12 +509,15 @@ blxDeletePlayer(const CHAR *uid)
     }
     dfaRstBlk();
 
-    /* deleting invalidates the scan position, so restart after each hit   */
+    /* Walk the score log with ACQUIRE (a get), so a matching record can be
+     * deleted straight away -- delbtv() must follow a get, not a step.  A
+     * delete invalidates the position, so restart from the lowest record
+     * after each hit.                                                      */
     dfaSetBlk(scorbb);
     for (;;) {
-        more=dfaStepLO(&rec) != 0;
+        more=dfaAcqLO(&rec, 0) != 0;
         while (more && !sameas(rec.userid, (CHAR*)uid)) {
-            more=dfaStepNX(&rec) != 0;
+            more=dfaAcqNX(&rec) != 0;
         }
         if (!more) {
             break;
